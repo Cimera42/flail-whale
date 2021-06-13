@@ -1,7 +1,7 @@
 import Game from './game';
 
 const main = () => {
-    new Game();
+    (window as any).game = new Game();
 };
 
 main();

@@ -13,3 +13,7 @@ export const getRandomInt = (min: number, max: number) => {
 export const sq = (num: number) => {
     return num * num;
 };
+
+export const lerp = (start: number, stop: number, amount: number) => {
+    return start * (1 - amount) + stop * amount;
+};
