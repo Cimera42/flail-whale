@@ -1,11 +1,11 @@
 {
   "name": "gmtk-2021",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "./build/index.html",
   "author": "Tim Porritt <tim.m.porritt@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "parcel build ./src/index.html",
+    "build": "parcel build ./src/index.html --dist-dir ./build",
     "start": "parcel serve ./src/index.html"
   },
   "dependencies": {

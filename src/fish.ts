@@ -126,14 +126,16 @@ class Fish {
             ctx.fill();
             ctx.restore();
 
-            ctx.font = '18px Helvetica';
-            ctx.fillStyle = 'black';
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            const healthText = `Health: ${Math.ceil((this.health / this.maxHealth) * 100)}%`;
-            const healthMeasured = ctx.measureText(healthText);
-            ctx.strokeText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
-            ctx.fillText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
+            if (this.harpoon.attachedTo) {
+                ctx.font = '18px Helvetica';
+                ctx.fillStyle = 'black';
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                const healthText = `Health: ${Math.ceil((this.health / this.maxHealth) * 100)}%`;
+                const healthMeasured = ctx.measureText(healthText);
+                ctx.strokeText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
+                ctx.fillText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
+            }
         } else {
             ctx.strokeStyle = 'red';
             ctx.lineWidth = 8;

@@ -4,6 +4,10 @@ import Map from './map';
 import Player from './player';
 import {clamp} from './Utilities/maths';
 import Vec2 from './Utilities/vectors';
+import BackgroundURL from 'url:./assets/mixkit-sea-waves-ambience-1189.mp3';
+import CannonURL from 'url:./assets/GunCannon.mp3';
+import HarpoonURL from 'url:./assets/Harpoon.mp3';
+import WhaleURL from 'url:./assets/Whale.mp3';
 
 class Game {
     ctx: CanvasRenderingContext2D;
@@ -30,7 +34,23 @@ class Game {
     mapSeed: number = 0;
     hasWon: boolean;
 
+    muted: boolean;
+    backgroundAudio: HTMLAudioElement;
+    whaleAudio: HTMLAudioElement;
+
     constructor() {
+        this.muted = false;
+
+        this.backgroundAudio = new Audio(BackgroundURL);
+        this.backgroundAudio.loop = true;
+        this.backgroundAudio.play();
+        this.backgroundAudio.volume = 0.05;
+
+        this.whaleAudio = new Audio(WhaleURL);
+        this.whaleAudio.loop = true;
+        this.whaleAudio.pause();
+        this.whaleAudio.volume = 0.1;
+
         this.canvas = document.createElement('canvas');
         const newCtx = this.canvas.getContext('2d', {
             alpha: false,
@@ -84,9 +104,9 @@ class Game {
                     this.player.charging = true;
                     this.player.chargingTime = 0;
                 } else if (e.button == 2) {
-                    this.player.charging = false;
                     this.harpoon.active = false;
                     this.harpoon.attachedTo = undefined;
+                    this.whaleAudio.pause();
                 }
             },
             false
@@ -99,26 +119,34 @@ class Game {
                     (e.y | e.clientY) - this.canvas.height / 2
                 );
                 if (e.button == 0) {
-                    if (this.player.charging) {
-                        this.harpoon.position = this.player.position.clone();
-                        this.harpoon.active = true;
-                        this.harpoon.attachedTo = undefined;
+                    if (!this.player.dead && this.fish.health > 0) {
+                        if (this.player.charging && !this.harpoon.active) {
+                            this.harpoon.position = this.player.position.clone();
+                            this.harpoon.active = true;
+                            this.harpoon.attachedTo = undefined;
 
-                        let launchSpeed = this.player.chargingTime * 100;
-                        launchSpeed = clamp(launchSpeed, 50, 400);
+                            if (!this.muted) {
+                                const sound = new Audio(CannonURL);
+                                sound.volume = 0.5;
+                                sound.play();
+                            }
 
-                        const diffToMouse = Vec2.subtractVec(
-                            Vec2.addVec(mousePos, this.camera),
-                            this.player.position
-                        );
+                            // let launchSpeed = this.player.chargingTime * 100;
+                            const launchSpeed = 350;
 
-                        const angle = Vec2.angleOfVec(diffToMouse);
-                        const dir = Vec2.normaliseVec(diffToMouse);
-                        const vel = Vec2.multiplyVec(dir, launchSpeed);
-                        vel.add(this.player.velocity);
+                            const diffToMouse = Vec2.subtractVec(
+                                Vec2.addVec(mousePos, this.camera),
+                                this.player.position
+                            );
 
-                        this.harpoon.velocity = vel;
-                        this.harpoon.angle = angle;
+                            const angle = Vec2.angleOfVec(diffToMouse);
+                            const dir = Vec2.normaliseVec(diffToMouse);
+                            const vel = Vec2.multiplyVec(dir, launchSpeed);
+                            vel.add(this.player.velocity);
+
+                            this.harpoon.velocity = vel;
+                            this.harpoon.angle = angle;
+                        }
                     }
                 } else if (e.button == 2) {
                 }
@@ -176,14 +204,18 @@ class Game {
             }
         }
         if (this.keyPresses['n']) {
-            console.log(this.keyPresses['n']);
-
             this.keyPresses['n'] = false;
             if (this.hasWon || this.fish.health <= 0) {
                 this.mapSeed = Math.random();
                 this.setup();
                 return;
             }
+        }
+        if (this.keyPresses['m']) {
+            this.keyPresses['m'] = false;
+            this.muted = !this.muted;
+            this.backgroundAudio.muted = this.muted;
+            this.whaleAudio.muted = this.muted;
         }
 
         let d = 0;
@@ -228,6 +260,14 @@ class Game {
             const dist = Vec2.distance(this.harpoon.position, this.fish.position);
             if (dist < 30) {
                 this.harpoon.attachedTo = this.fish;
+
+                if (!this.muted) {
+                    const sound = new Audio(HarpoonURL);
+                    sound.volume = 0.3;
+                    sound.play();
+
+                    this.whaleAudio.play();
+                }
             }
             const playerDist = Vec2.distance(this.harpoon.position, this.player.position);
             if (playerDist > 500) {
@@ -246,11 +286,16 @@ class Game {
 
             if (dist < this.captureDist) {
                 this.fish.health -= inDelta * 1000;
+
+                if (this.fish.health < 0) {
+                    this.whaleAudio.pause();
+                    this.whaleAudio.currentTime = 0;
+                }
             }
         }
 
         const playerData = this.map.dataAtWorldPos(this.player.position);
-        if (playerData > 0.75) {
+        if (playerData > this.map.landData) {
             this.player.dead = true;
             this.harpoon.attachedTo = undefined;
             this.harpoon.active = false;
@@ -432,10 +477,10 @@ class Game {
         this.ctx.font = 'bold 18px Helvetica';
         this.ctx.fillText('Instructions:', 4, (y += 22));
         this.ctx.font = '18px Helvetica';
-        this.ctx.fillText('Goal is to harpoon the fish and stay near', 4, (y += 22));
+        this.ctx.fillText('Goal is to harpoon the whale and stay near', 4, (y += 22));
         this.ctx.fillText('A/D for steering', 4, (y += 22));
         this.ctx.fillText('W/S for forward/reverse', 4, (y += 22));
-        this.ctx.fillText('Hold and release left click for harpoon', 4, (y += 22));
+        this.ctx.fillText('Left click for harpoon', 4, (y += 22));
         this.ctx.fillText('Right click to release harpoon', 4, (y += 22));
     };
 }

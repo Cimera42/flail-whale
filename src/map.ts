@@ -5,8 +5,8 @@ import Vec2 from './Utilities/vectors';
 
 const stops: [number, number, number, number, number, boolean][] = [
     [0, 64, 64, 243, 255, false],
-    [0.6, 113, 181, 226, 180, false],
-    [0.75, 255, 253, 109, 255, false],
+    [0.55, 113, 181, 226, 180, false],
+    [0.7, 255, 253, 109, 255, false],
     [0.8, 255, 253, 109, 255, true],
     [0.9, 52, 192, 71, 255, true],
     [1, 56, 155, 69, 255, false],
@@ -42,6 +42,8 @@ class Map {
     scale: number;
     size: number;
     pixelSize: number;
+
+    landData: number = stops[2][0];
 
     constructor(
         ctx: CanvasRenderingContext2D,
@@ -104,7 +106,7 @@ class Map {
                 upperPixels.data[j * (pixelSize * 4) + i * 4 + 2] = colour[2];
                 upperPixels.data[j * (pixelSize * 4) + i * 4 + 3] = colour[3];
 
-                if (d < 0.6) {
+                if (d < stops[1][0]) {
                     upperPixels.data[j * (pixelSize * 4) + i * 4 + 3] = 0;
                 }
             }
