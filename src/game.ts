@@ -90,6 +90,9 @@ class Game {
         this.map = new Map(this.ctx, 5000, 500, this.player, this.mapSeed);
 
         this.fish = new Fish(550, -100, this.map, this.harpoon);
+
+        this.whaleAudio.pause();
+        this.whaleAudio.currentTime = 0;
     };
 
     setupListeners = () => {
