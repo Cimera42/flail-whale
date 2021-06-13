@@ -44,6 +44,14 @@ class Vec2 {
         return sq(this.x) + sq(this.y);
     };
 
+    normalised = () => {
+        return Vec2.normaliseVec(this);
+    };
+
+    toString = () => {
+        return `Vec2(${this.x}, ${this.y})`;
+    };
+
     static lerp(vecOne: Vec2, vecTwo: Vec2, amount: number) {
         return new Vec2(
             vecOne.x * (1 - amount) + vecTwo.x * amount,
@@ -60,7 +68,7 @@ class Vec2 {
     }
 
     static angleOfVec(inVec: Vec2) {
-        return Math.atan2(inVec.y, inVec.x) - Math.atan2(1, 0); //2nd atan is the direction of 0 degrees
+        return Math.atan2(inVec.y, inVec.x) - Math.atan2(0, 1);
     }
 
     static vecOfAngle(angle: number) {
@@ -99,5 +107,6 @@ class Vec2 {
         return vec1.x * vec2.x + vec1.y * vec2.y;
     }
 }
+(window as any).Vec2 = Vec2;
 
 export default Vec2;
