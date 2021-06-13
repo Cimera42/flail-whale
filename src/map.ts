@@ -1,6 +1,6 @@
 import Player from './player';
 import {clamp, lerp} from './Utilities/maths';
-import {perlin2} from './Utilities/perlin';
+import {perlin2, seed} from './Utilities/perlin';
 import Vec2 from './Utilities/vectors';
 
 const stops: [number, number, number, number, number, boolean][] = [
@@ -43,10 +43,18 @@ class Map {
     size: number;
     pixelSize: number;
 
-    constructor(ctx: CanvasRenderingContext2D, size: number, pixelSize: number, player: Player) {
+    constructor(
+        ctx: CanvasRenderingContext2D,
+        size: number,
+        pixelSize: number,
+        player: Player,
+        mapSeed: number
+    ) {
         this.scale = size / pixelSize;
         this.size = size;
         this.pixelSize = pixelSize;
+
+        seed(mapSeed);
 
         this.data = [];
         for (let i = 0; i < pixelSize; i++) {

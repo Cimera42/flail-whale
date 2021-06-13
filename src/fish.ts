@@ -14,6 +14,9 @@ class Fish {
     public speed: number;
     public fearSpeed: number;
 
+    public health: number;
+    public maxHealth: number;
+
     map: Map;
     harpoon: Harpoon;
 
@@ -21,12 +24,15 @@ class Fish {
         this.position = new Vec2(x, y);
         this.velocity = new Vec2(0, 0);
 
-        this.angle = Math.PI / 2;
+        this.angle = Math.PI * 1.6;
 
         this.fat = 50;
         this.long = 100;
         this.speed = 3;
         this.fearSpeed = 10;
+
+        this.health = 120000;
+        this.maxHealth = this.health;
 
         this.map = map;
         this.harpoon = harpoon;
@@ -107,14 +113,42 @@ class Fish {
 
         ctx.save();
         ctx.translate(this.position.x, this.position.y);
-        ctx.rotate(this.angle);
 
-        ctx.fillStyle = 'darkblue';
-        ctx.beginPath();
-        ctx.moveTo(-this.long * skew, 0);
-        ctx.quadraticCurveTo(this.long * 0.25 * skew, this.fat, this.long * 0.25, 0);
-        ctx.quadraticCurveTo(this.long * 0.25 * skew, -this.fat, -this.long * 0.75, 0);
-        ctx.fill();
+        if (this.health > 0) {
+            ctx.save();
+            ctx.rotate(this.angle);
+
+            ctx.fillStyle = 'darkblue';
+            ctx.beginPath();
+            ctx.moveTo(-this.long * skew, 0);
+            ctx.quadraticCurveTo(this.long * 0.25 * skew, this.fat, this.long * 0.25, 0);
+            ctx.quadraticCurveTo(this.long * 0.25 * skew, -this.fat, -this.long * 0.75, 0);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.font = '18px Helvetica';
+            ctx.fillStyle = 'black';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            const healthText = `Health: ${Math.ceil((this.health / this.maxHealth) * 100)}%`;
+            const healthMeasured = ctx.measureText(healthText);
+            ctx.strokeText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
+            ctx.fillText(healthText, -healthMeasured.width / 2, this.long / 2 + 4);
+        } else {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 8;
+            const s = 20;
+
+            ctx.beginPath();
+            ctx.moveTo(-s, -s);
+            ctx.lineTo(s, s);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-s, s);
+            ctx.lineTo(s, -s);
+            ctx.stroke();
+        }
 
         ctx.restore();
     }

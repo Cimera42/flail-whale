@@ -24,15 +24,13 @@ class Player {
     }
 
     logic(inDelta: number) {
-        if (!this.dead) {
-            const deltaVel = Vec2.multiplyVec(this.velocity, inDelta);
+        const deltaVel = Vec2.multiplyVec(this.velocity, inDelta);
 
-            this.position.add(deltaVel);
-            this.velocity.multiply(1 - 0.1 * inDelta);
+        this.position.add(deltaVel);
+        this.velocity.multiply(1 - 0.1 * inDelta);
 
-            if (this.charging) {
-                this.chargingTime += inDelta;
-            }
+        if (this.charging) {
+            this.chargingTime += inDelta;
         }
     }
 

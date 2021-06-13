@@ -15,17 +15,20 @@ class Game {
     then = Date.now();
     keyPresses: Record<string, boolean> = {};
 
-    map: Map;
+    map!: Map;
 
-    player: Player;
-    fish: Fish;
-    harpoon: Harpoon;
+    player!: Player;
+    fish!: Fish;
+    harpoon!: Harpoon;
 
-    camera: Vec2;
+    camera!: Vec2;
 
     bounds: [Vec2, Vec2];
 
     captureDist: number = 150;
+
+    mapSeed: number = 0;
+    hasWon: boolean;
 
     constructor() {
         this.canvas = document.createElement('canvas');
@@ -49,13 +52,8 @@ class Game {
 
         this.setupListeners();
 
-        this.camera = new Vec2(0, 0);
-        this.player = new Player(-200, 0, Math.PI);
-        this.harpoon = new Harpoon(this.player);
-
-        this.map = new Map(this.ctx, 5000, 500, this.player);
-
-        this.fish = new Fish(-400, 0, this.map, this.harpoon);
+        this.hasWon = false;
+        this.setup();
 
         const min = new Vec2(-this.map.size / 2, -this.map.size / 2);
         const max = new Vec2(this.map.size / 2, this.map.size / 2);
@@ -63,6 +61,16 @@ class Game {
 
         this.loop();
     }
+
+    setup = () => {
+        this.camera = new Vec2(0, 0);
+        this.player = new Player(-200, 0, Math.PI);
+        this.harpoon = new Harpoon(this.player);
+
+        this.map = new Map(this.ctx, 5000, 500, this.player, this.mapSeed);
+
+        this.fish = new Fish(550, -100, this.map, this.harpoon);
+    };
 
     setupListeners = () => {
         this.canvas.addEventListener(
@@ -121,14 +129,18 @@ class Game {
         addEventListener(
             'keydown',
             (e) => {
-                this.keyPresses[e.key] = true;
+                if (!e.repeat) {
+                    this.keyPresses[e.key] = true;
+                }
             },
             false
         );
         addEventListener(
             'keyup',
             (e) => {
-                this.keyPresses[e.key] = false;
+                if (!e.repeat) {
+                    this.keyPresses[e.key] = false;
+                }
             },
             false
         );
@@ -155,7 +167,24 @@ class Game {
     };
 
     logic = (inDelta: number) => {
-        const accel = this.keyPresses[' '] ? 50 : 20;
+        const accel = 20;
+
+        if (this.keyPresses['r']) {
+            if (this.player.dead) {
+                this.setup();
+                return;
+            }
+        }
+        if (this.keyPresses['n']) {
+            console.log(this.keyPresses['n']);
+
+            this.keyPresses['n'] = false;
+            if (this.hasWon || this.fish.health <= 0) {
+                this.mapSeed = Math.random();
+                this.setup();
+                return;
+            }
+        }
 
         let d = 0;
         if (this.keyPresses['a']) {
@@ -177,7 +206,9 @@ class Game {
         const deltaAccel = Vec2.multiplyVec(acceleration, inDelta);
         this.player.velocity.add(deltaAccel);
 
-        this.player.logic(inDelta);
+        if (!this.player.dead) {
+            this.player.logic(inDelta);
+        }
         this.player.position.x = clamp(this.player.position.x, this.bounds[0].x, this.bounds[1].x);
         this.player.position.y = clamp(this.player.position.y, this.bounds[0].y, this.bounds[1].y);
 
@@ -185,7 +216,13 @@ class Game {
             this.harpoon.logic(inDelta);
         }
 
-        this.fish.logic(inDelta);
+        if (this.fish.health > 0) {
+            this.fish.logic(inDelta);
+        } else {
+            this.hasWon = true;
+            this.harpoon.attachedTo = undefined;
+            this.harpoon.active = false;
+        }
 
         if (this.harpoon.active && !this.harpoon.attachedTo) {
             const dist = Vec2.distance(this.harpoon.position, this.fish.position);
@@ -198,7 +235,7 @@ class Game {
             }
         }
 
-        if (this.harpoon.attachedTo) {
+        if (this.harpoon.attachedTo && !this.player.dead && this.fish.health > 0) {
             const diff = Vec2.subtractVec(this.harpoon.attachedTo.position, this.player.position);
             const dist = diff.length();
             const deltaDiff = Vec2.multiplyVec(diff, (inDelta * dist) / 5000);
@@ -206,6 +243,10 @@ class Game {
 
             const fishDeltaDiff = Vec2.multiplyVec(deltaDiff, -0.05);
             this.fish.velocity.add(fishDeltaDiff);
+
+            if (dist < this.captureDist) {
+                this.fish.health -= inDelta * 1000;
+            }
         }
 
         const playerData = this.map.dataAtWorldPos(this.player.position);
@@ -265,7 +306,7 @@ class Game {
 
         this.player.render(this.ctx);
 
-        if (!this.harpoon.attachedTo && !this.player.dead) {
+        if (!this.harpoon.attachedTo && !this.player.dead && this.fish.health > 0) {
             const angleToFish = Vec2.angleOfVec(
                 Vec2.subtractVec(this.fish.position, this.player.position)
             );
@@ -287,7 +328,44 @@ class Game {
 
         this.ctx.restore();
 
-        if (this.player.dead) {
+        if (this.fish.health <= 0) {
+            this.ctx.save();
+            this.ctx.font = 'bold 42px Helvetica';
+            this.ctx.fillStyle = 'black';
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 4;
+            const deadText = 'You Win!!!';
+            const measured = this.ctx.measureText(deadText);
+            this.ctx.strokeText(
+                deadText,
+                this.canvas.width / 2 - measured.width / 2,
+                this.canvas.height / 2 + 100
+            );
+            this.ctx.fillText(
+                deadText,
+                this.canvas.width / 2 - measured.width / 2,
+                this.canvas.height / 2 + 100
+            );
+            this.ctx.restore();
+
+            this.ctx.font = 'bold 24px Helvetica';
+            this.ctx.fillStyle = 'black';
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 2;
+            const newMapText = "Press 'N' to start a new map";
+            const newMapMeasured = this.ctx.measureText(newMapText);
+            this.ctx.strokeText(
+                newMapText,
+                this.canvas.width / 2 - newMapMeasured.width / 2,
+                this.canvas.height / 2 + 150
+            );
+            this.ctx.fillText(
+                newMapText,
+                this.canvas.width / 2 - newMapMeasured.width / 2,
+                this.canvas.height / 2 + 150
+            );
+        } else if (this.player.dead) {
+            this.ctx.save();
             this.ctx.font = 'bold 42px Helvetica';
             this.ctx.fillStyle = 'black';
             this.ctx.strokeStyle = 'white';
@@ -304,6 +382,43 @@ class Game {
                 this.canvas.width / 2 - measured.width / 2,
                 this.canvas.height / 2 + 100
             );
+            this.ctx.restore();
+
+            this.ctx.font = 'bold 24px Helvetica';
+            this.ctx.fillStyle = 'black';
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 2;
+            const restartText = "Press 'R' to restart";
+            const restartMeasured = this.ctx.measureText(restartText);
+            this.ctx.strokeText(
+                restartText,
+                this.canvas.width / 2 - restartMeasured.width / 2,
+                this.canvas.height / 2 + 150
+            );
+            this.ctx.fillText(
+                restartText,
+                this.canvas.width / 2 - restartMeasured.width / 2,
+                this.canvas.height / 2 + 150
+            );
+
+            if (this.hasWon) {
+                this.ctx.font = 'bold 24px Helvetica';
+                this.ctx.fillStyle = 'black';
+                this.ctx.strokeStyle = 'white';
+                this.ctx.lineWidth = 2;
+                const newMapText = "Or press 'N' to start a new map";
+                const newMapMeasured = this.ctx.measureText(newMapText);
+                this.ctx.strokeText(
+                    newMapText,
+                    this.canvas.width / 2 - newMapMeasured.width / 2,
+                    this.canvas.height / 2 + 200
+                );
+                this.ctx.fillText(
+                    newMapText,
+                    this.canvas.width / 2 - newMapMeasured.width / 2,
+                    this.canvas.height / 2 + 200
+                );
+            }
         }
 
         if (this.drawFPS != undefined) {
@@ -311,6 +426,17 @@ class Game {
             this.ctx.fillStyle = 'black';
             this.ctx.fillText('FPS: ' + this.drawFPS, 4, 22);
         }
+
+        this.ctx.fillStyle = 'black';
+        let y = 44;
+        this.ctx.font = 'bold 18px Helvetica';
+        this.ctx.fillText('Instructions:', 4, (y += 22));
+        this.ctx.font = '18px Helvetica';
+        this.ctx.fillText('Goal is to harpoon the fish and stay near', 4, (y += 22));
+        this.ctx.fillText('A/D for steering', 4, (y += 22));
+        this.ctx.fillText('W/S for forward/reverse', 4, (y += 22));
+        this.ctx.fillText('Hold and release left click for harpoon', 4, (y += 22));
+        this.ctx.fillText('Right click to release harpoon', 4, (y += 22));
     };
 }
 
