@@ -1,5 +1,7 @@
 # Flail Whale
 
+<img src="https://user-images.githubusercontent.com/13784116/164978529-6eb816c7-d176-4a0d-ac84-85699b02584e.png" alt="Gameplay screenshot" height="300"/>
+
 ## About
 
 A game made for [GMTK Game Jam 2021](https://itch.io/jam/gmtk-2021). The theme was "Joined".
