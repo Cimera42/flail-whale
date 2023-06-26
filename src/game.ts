@@ -179,7 +179,7 @@ class Game {
 
     loop = () => {
         var now = Date.now();
-        var delta = (now - this.then) / 1000;
+        var delta = ((now - this.then) / 1000) * 4; // x4 to replicate tuning for 60 FPS with previous scuffed deltatime
         this.then = now;
 
         this.logic(delta);
