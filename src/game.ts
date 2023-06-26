@@ -179,12 +179,10 @@ class Game {
 
     loop = () => {
         var now = Date.now();
-        var delta = now - this.then;
+        var delta = (now - this.then) / 1000;
         this.then = now;
 
-        let frameTime = delta ? 1 / delta : 0;
-
-        this.logic(frameTime);
+        this.logic(delta);
         this.render();
 
         this.fps++;
